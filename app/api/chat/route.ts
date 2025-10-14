@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
+import OpenAI from 'openai';
 
 // GPU Router AI Assistant System Prompt (October 2025)
 const SYSTEM_PROMPT = `# GPU Router - AI Assistant System Prompt
@@ -115,8 +115,9 @@ Vast.ai       | RTX 4090  | 24GB  | $0.45 | ⚠️ Medium  | Cheapest, risky
 
 **Your Goal:** Empower confident, optimal GPU deployment decisions with data-backed expertise. Save users time, money, and frustration.`;
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  baseURL: 'https://api.deepseek.com',
 });
 
 export async function POST(req: NextRequest) {
@@ -142,10 +143,10 @@ export async function POST(req: NextRequest) {
       })),
     ];
 
-    // Call Groq API
-    const completion = await groq.chat.completions.create({
+    // Call DeepSeek API
+    const completion = await openai.chat.completions.create({
       messages: formattedMessages as any,
-      model: 'openai/gpt-oss-20b',
+      model: 'deepseek-chat',
       temperature: 0.7,
       max_tokens: 2048,
     });
