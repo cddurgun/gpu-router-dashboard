@@ -1,4 +1,4 @@
-import { gpus, getOfferingsForGPU } from '@/lib/gpu-data';
+import { gpus, getOfferingsForGPU, getGPUById, getPricingForGPU } from '@/lib/gpu-data';
 import {
   calculateAverageAvailability,
   getAvailabilityBadge,
@@ -10,6 +10,7 @@ import Link from 'next/link';
 import type { GPU } from '@/types';
 
 export default function GPUsPage() {
+  const compact = gpus.length >= 30;
   const nvidiaGPUs = gpus.filter((gpu) => gpu.vendor === 'NVIDIA');
   const amdGPUs = gpus.filter((gpu) => gpu.vendor === 'AMD');
   const vendorSections: {
@@ -58,7 +59,7 @@ export default function GPUsPage() {
       </div>
 
       {/* Quick Filters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4">
           <p className="text-sm text-gray-400 mb-1">Total GPUs</p>
           <p className="text-2xl font-bold text-white">{gpus.length}</p>
@@ -75,6 +76,32 @@ export default function GPUsPage() {
           <p className="text-sm text-gray-400 mb-1">Price Range</p>
           <p className="text-2xl font-bold text-gray-400">$0.45-$6.25</p>
         </div>
+        {/* 8x B200 cluster summary */}
+        {(() => {
+          const b200 = getGPUById('nvidia-b200');
+          const b200Pricing = getPricingForGPU('nvidia-b200');
+          const minB200 = b200Pricing.length
+            ? Math.min(...b200Pricing.map((p) => p.pricePerHour))
+            : null;
+          const count = 8;
+          const fp16 = b200 ? b200.tflops.fp16 * count : null;
+          const fp8 = b200 && b200.tflops.fp8 ? (b200.tflops.fp8 as number) * count : null;
+          const cost = minB200 !== null ? minB200 * count : null;
+          return (
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4">
+              <p className="text-sm text-gray-400 mb-1">8× B200 Cluster</p>
+              <p className="text-lg font-bold text-white">
+                {fp16 ? `${fp16.toLocaleString()} TFLOPS FP16` : '—'}
+              </p>
+              <p className="text-xs text-gray-400">
+                {fp8 ? `${fp8.toLocaleString()} TFLOPS FP8` : ''}
+              </p>
+              <p className="text-sm text-gray-300 mt-1">
+                {cost !== null ? `$${cost.toFixed(2)}/hr` : 'Pricing unavailable'}
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       {vendorSections.map((section) => (
@@ -88,7 +115,13 @@ export default function GPUsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            className={
+              compact
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3'
+                : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+            }
+          >
             {section.gpus.map((gpu) => {
               const offerings = getOfferingsForGPU(gpu.id);
               const averageAvailability = calculateAverageAvailability(offerings);
@@ -99,48 +132,48 @@ export default function GPUsPage() {
               return (
                 <div
                   key={gpu.id}
-                  className={`bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5 transition-all ${section.cardAccentClass}`}
+                  className={`bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl ${compact ? 'p-4' : 'p-5'} transition-all ${section.cardAccentClass}`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="text-lg font-bold text-white">{gpu.name}</h3>
-                      <p className="text-sm text-gray-400">
+                      <h3 className={`${compact ? 'text-base' : 'text-lg'} font-bold text-white`}>{gpu.name}</h3>
+                      <p className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400`}>
                         {gpu.generation} • {gpu.architecture}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${availability.className}`}>
+                    <span className={`px-2 py-1 rounded-md ${compact ? 'text-[10px]' : 'text-xs'} font-semibold border ${availability.className}`}>
                       {availability.label}
                     </span>
                   </div>
 
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center justify-between text-sm">
+                  <div className={`space-y-2 ${compact ? 'mb-3' : 'mb-4'}`}>
+                    <div className={`flex items-center justify-between ${compact ? 'text-xs' : 'text-sm'}`}>
                       <span className="text-gray-400">VRAM</span>
                       <span className="text-white font-semibold">
                         {gpu.vram}GB {gpu.vramType}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className={`flex items-center justify-between ${compact ? 'text-xs' : 'text-sm'}`}>
                       <span className="text-gray-400">FP16 TFLOPS</span>
                       <span className="text-white font-semibold">
                         {gpu.tflops.fp16.toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className={`flex items-center justify-between ${compact ? 'text-xs' : 'text-sm'}`}>
                       <span className="text-gray-400">Memory BW</span>
                       <span className="text-white font-semibold">{gpu.memoryBandwidth} TB/s</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className={`flex items-center justify-between ${compact ? 'text-xs' : 'text-sm'}`}>
                       <span className="text-gray-400">Power</span>
                       <span className="text-white font-semibold">{gpu.powerDraw}W</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {gpu.features.slice(0, 3).map((feature) => (
+                  <div className={`flex flex-wrap gap-1 ${compact ? 'mb-3' : 'mb-4'}`}>
+                    {gpu.features.slice(0, compact ? 2 : 3).map((feature) => (
                       <span
                         key={feature}
-                        className="text-xs px-2 py-1 rounded-md bg-gray-800 text-gray-300 border border-gray-600"
+                        className={`${compact ? 'text-[10px]' : 'text-xs'} px-2 py-1 rounded-md bg-gray-800 text-gray-300 border border-gray-600`}
                       >
                         {feature}
                       </span>
@@ -152,10 +185,10 @@ export default function GPUsPage() {
                       <div>
                         {lowestPrice !== null ? (
                           <>
-                            <p className="text-xl font-bold text-white">
+                            <p className={`${compact ? 'text-lg' : 'text-xl'} font-bold text-white`}>
                               ${lowestPrice.toFixed(2)}
                             </p>
-                            <p className="text-xs text-gray-400">
+                            <p className={`${compact ? 'text-[11px]' : 'text-xs'} text-gray-400`}>
                               per hour • {providerCount} provider{providerCount !== 1 ? 's' : ''}
                             </p>
                           </>
@@ -165,7 +198,7 @@ export default function GPUsPage() {
                       </div>
                       <Link
                         href={`/gpus/${gpu.id}`}
-                        className={`px-4 py-2 rounded-lg text-white text-sm font-semibold transition-colors ${section.ctaClassName}`}
+                        className={`rounded-lg text-white ${compact ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'} font-semibold transition-colors ${section.ctaClassName}`}
                       >
                         Details
                       </Link>
