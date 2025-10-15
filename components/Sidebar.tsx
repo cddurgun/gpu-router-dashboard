@@ -8,6 +8,7 @@ import {
   ServerIcon,
   ChatBubbleLeftRightIcon,
   ChartBarIcon,
+  ArrowsRightLeftIcon,
   XMarkIcon,
   Bars3Icon
 } from '@heroicons/react/24/outline';
@@ -16,6 +17,7 @@ import { useState } from 'react';
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'GPUs', href: '/gpus', icon: CpuChipIcon },
+  { name: 'Compare GPUs', href: '/compare', icon: ArrowsRightLeftIcon },
   { name: 'Providers', href: '/providers', icon: ServerIcon },
   { name: 'AI Assistant', href: '/chat', icon: ChatBubbleLeftRightIcon },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },

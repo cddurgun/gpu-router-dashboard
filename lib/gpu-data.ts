@@ -1,5 +1,5 @@
 // GPU Router Data - October 2025
-import { GPU, Provider, GPUPricing } from '@/types';
+import { GPU, Provider, GPUPricing, GPUOffering } from '@/types';
 
 export const gpus: GPU[] = [
   // NVIDIA Blackwell Generation
@@ -1014,23 +1014,53 @@ export function getPricingForGPU(gpuId: string): GPUPricing[] {
 }
 
 // Helper function to get all offerings for a GPU
-export function getOfferingsForGPU(gpuId: string) {
+export function getOfferingsForGPU(gpuId: string): GPUOffering[] {
   const gpu = getGPUById(gpuId);
   if (!gpu) return [];
 
   const pricing = getPricingForGPU(gpuId);
-  return pricing.map((price) => {
+  return pricing.reduce<GPUOffering[]>((acc, price) => {
     const provider = getProviderById(price.providerId);
-    if (!provider) return null;
+    if (!provider) {
+      return acc;
+    }
 
-    return {
+    acc.push({
       gpu,
       provider,
       pricing: price,
       performanceScore: calculatePerformanceScore(gpu),
       valueScore: calculateValueScore(gpu, price),
-    };
-  }).filter(Boolean);
+    });
+
+    return acc;
+  }, []);
+}
+
+export function getOfferingsForProvider(providerId: string): GPUOffering[] {
+  const provider = getProviderById(providerId);
+  if (!provider) return [];
+
+  return gpuPricing.reduce<GPUOffering[]>((acc, pricing) => {
+    if (pricing.providerId !== providerId) {
+      return acc;
+    }
+
+    const gpu = getGPUById(pricing.gpuId);
+    if (!gpu) {
+      return acc;
+    }
+
+    acc.push({
+      gpu,
+      provider,
+      pricing,
+      performanceScore: calculatePerformanceScore(gpu),
+      valueScore: calculateValueScore(gpu, pricing),
+    });
+
+    return acc;
+  }, []);
 }
 
 // Calculate performance score (0-100)
@@ -1055,21 +1085,25 @@ function calculateValueScore(gpu: GPU, pricing: GPUPricing): number {
 }
 
 // Get best value GPUs
-export function getBestValueGPUs(limit: number = 5) {
-  const allOfferings = gpuPricing.map((pricing) => {
+export function getBestValueGPUs(limit: number = 5): GPUOffering[] {
+  const allOfferings = gpuPricing.reduce<GPUOffering[]>((acc, pricing) => {
     const gpu = getGPUById(pricing.gpuId);
     const provider = getProviderById(pricing.providerId);
 
-    if (!gpu || !provider) return null;
+    if (!gpu || !provider) {
+      return acc;
+    }
 
-    return {
+    acc.push({
       gpu,
       provider,
       pricing,
       performanceScore: calculatePerformanceScore(gpu),
       valueScore: calculateValueScore(gpu, pricing),
-    };
-  }).filter(Boolean) as any[];
+    });
+
+    return acc;
+  }, []);
 
   return allOfferings
     .sort((a, b) => b.valueScore - a.valueScore)
@@ -1077,21 +1111,25 @@ export function getBestValueGPUs(limit: number = 5) {
 }
 
 // Get fastest GPUs
-export function getFastestGPUs(limit: number = 5) {
-  const allOfferings = gpuPricing.map((pricing) => {
+export function getFastestGPUs(limit: number = 5): GPUOffering[] {
+  const allOfferings = gpuPricing.reduce<GPUOffering[]>((acc, pricing) => {
     const gpu = getGPUById(pricing.gpuId);
     const provider = getProviderById(pricing.providerId);
 
-    if (!gpu || !provider) return null;
+    if (!gpu || !provider) {
+      return acc;
+    }
 
-    return {
+    acc.push({
       gpu,
       provider,
       pricing,
       performanceScore: calculatePerformanceScore(gpu),
       valueScore: calculateValueScore(gpu, pricing),
-    };
-  }).filter(Boolean) as any[];
+    });
+
+    return acc;
+  }, []);
 
   return allOfferings
     .sort((a, b) => b.performanceScore - a.performanceScore)

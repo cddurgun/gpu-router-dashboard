@@ -1,20 +1,7 @@
-import { providers, gpuPricing, getGPUById } from '@/lib/gpu-data';
+import { providers, getOfferingsForProvider } from '@/lib/gpu-data';
+import { calculateAverageAvailability, getAvailabilityBadge, getReliabilityBadge } from '@/lib/metrics';
 import { ServerIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-
-function getReliabilityBadge(tier: number) {
-  if (tier === 1) return { text: 'Tier 1', color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: '⭐⭐⭐' };
-  if (tier === 2) return { text: 'Tier 2', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: '⭐⭐' };
-  return { text: 'Tier 3', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: '⭐' };
-}
-
-function getProviderGPUs(providerId: string) {
-  const offerings = gpuPricing.filter(p => p.providerId === providerId);
-  return offerings.map(o => {
-    const gpu = getGPUById(o.gpuId);
-    return { gpu, pricing: o };
-  });
-}
 
 export default function ProvidersPage() {
   return (
@@ -77,10 +64,12 @@ export default function ProvidersPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {providers.map((provider) => {
             const reliability = getReliabilityBadge(provider.reliabilityTier);
-            const offerings = getProviderGPUs(provider.id);
+            const offerings = getOfferingsForProvider(provider.id);
             const lowestPrice = offerings.length > 0
               ? Math.min(...offerings.map(o => o.pricing.pricePerHour))
               : null;
+            const averageAvailability = calculateAverageAvailability(offerings);
+            const availability = getAvailabilityBadge(averageAvailability);
 
             return (
               <div
@@ -95,8 +84,8 @@ export default function ProvidersPage() {
                       <span className="text-xs px-2 py-1 rounded-md bg-gray-700 text-gray-300 capitalize">
                         {provider.type}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded-md border font-semibold ${reliability.color}`}>
-                        {reliability.icon} {reliability.text}
+                      <span className={`text-xs px-2 py-1 rounded-md border font-semibold ${reliability.className}`}>
+                        {reliability.icon} {reliability.label}
                       </span>
                     </div>
                     <a
@@ -111,7 +100,7 @@ export default function ProvidersPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                   <div>
                     <p className="text-sm text-gray-400">Uptime</p>
                     <p className="text-lg font-bold text-white">{provider.uptime}%</p>
@@ -119,6 +108,19 @@ export default function ProvidersPage() {
                   <div>
                     <p className="text-sm text-gray-400">Support</p>
                     <p className="text-lg font-bold text-white capitalize">{provider.supportLevel}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Availability</p>
+                    <p className="text-sm font-semibold text-white">
+                      <span className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold ${availability.className}`}>
+                        {availability.label}
+                        {averageAvailability !== null && (
+                          <span className="ml-2 text-gray-400 font-normal">
+                            ({averageAvailability.toFixed(0)}/100)
+                          </span>
+                        )}
+                      </span>
+                    </p>
                   </div>
                 </div>
 

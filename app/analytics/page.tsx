@@ -102,6 +102,9 @@ export default function AnalyticsPage() {
                   <ArrowTrendingDownIcon className="h-5 w-5 text-green-400" />
                 )}
               </div>
+              <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold border ${colorClasses}`}>
+                {isPositive ? 'Momentum up' : 'Momentum down'}
+              </span>
               <div className="flex items-baseline space-x-2 mb-2">
                 <span className="text-2xl font-bold text-white">{trend.change}</span>
                 <span className="text-sm text-gray-500">{trend.period}</span>

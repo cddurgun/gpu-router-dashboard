@@ -1,24 +1,12 @@
 import Link from 'next/link';
 import { getBestValueGPUs, getFastestGPUs } from '@/lib/gpu-data';
+import { getAvailabilityBadge, getPerformanceIndicator } from '@/lib/metrics';
 import { CpuChipIcon, BoltIcon, CurrencyDollarIcon, ServerIcon } from '@heroicons/react/24/outline';
-
-function getAvailabilityBadge(score: number) {
-  if (score >= 80) return { text: '✅ High', color: 'bg-green-500/20 text-green-400 border-green-500/30' };
-  if (score >= 50) return { text: '⚠️ Medium', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
-  return { text: '❌ Low', color: 'bg-red-500/20 text-red-400 border-red-500/30' };
-}
-
-function getPerformanceIndicator(score: number) {
-  if (score >= 80) return '⚡⚡⚡⚡⚡';
-  if (score >= 60) return '⚡⚡⚡⚡';
-  if (score >= 40) return '⚡⚡⚡';
-  if (score >= 20) return '⚡⚡';
-  return '⚡';
-}
+import type { GPUOffering } from '@/types';
 
 export default function HomePage() {
-  const bestValueGPUs = getBestValueGPUs(6);
-  const fastestGPUs = getFastestGPUs(6);
+  const bestValueGPUs: GPUOffering[] = getBestValueGPUs(6);
+  const fastestGPUs: GPUOffering[] = getFastestGPUs(6);
 
   return (
     <div className="space-y-8">
@@ -132,7 +120,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {bestValueGPUs.map((offering: any) => {
+          {bestValueGPUs.map((offering: GPUOffering) => {
             const availability = getAvailabilityBadge(offering.pricing.availabilityScore);
             const performance = getPerformanceIndicator(offering.performanceScore);
 
@@ -146,8 +134,8 @@ export default function HomePage() {
                     <h3 className="text-lg font-bold text-white">{offering.gpu.name}</h3>
                     <p className="text-sm text-gray-400">{offering.provider.name}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${availability.color}`}>
-                    {availability.text}
+                  <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${availability.className}`}>
+                    {availability.label}
                   </span>
                 </div>
 
@@ -204,7 +192,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {fastestGPUs.map((offering: any) => {
+          {fastestGPUs.map((offering: GPUOffering) => {
             const availability = getAvailabilityBadge(offering.pricing.availabilityScore);
             const performance = getPerformanceIndicator(offering.performanceScore);
 
@@ -218,8 +206,8 @@ export default function HomePage() {
                     <h3 className="text-lg font-bold text-white">{offering.gpu.name}</h3>
                     <p className="text-sm text-gray-400">{offering.provider.name}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${availability.color}`}>
-                    {availability.text}
+                  <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${availability.className}`}>
+                    {availability.label}
                   </span>
                 </div>
 
